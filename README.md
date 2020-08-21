@@ -1,1 +1,1 @@
-# Servier_CHC_2020Q1Q2
+# Servier_CHC_2020Q2
