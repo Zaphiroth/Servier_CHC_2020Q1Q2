@@ -130,7 +130,7 @@ chk <- universe.set %>%
   mutate(panel_sales = if_else(is.na(panel_sales), 0, panel_sales))
 
 sum(chk$panel_sales, na.rm = TRUE) <= sum(proj.quarter$panel_sales, na.rm = TRUE)
-# TRUE: no multiple match
+# TRUE means no multiple match
 
 # projection result
 proj.most <- universe.set %>% 
@@ -202,5 +202,12 @@ proj.total <- bind_rows(proj.most, proj.fz) %>%
   ungroup()
 
 write_feather(proj.total, "03_Outputs/03_Servier_CHC_Projection.feather")
+
+# QC
+chk <- proj.total %>% 
+  group_by(city, market, quarter) %>% 
+  summarise(sales = sum(sales)) %>% 
+  ungroup() %>% 
+  arrange(city, market, quarter)
 
 

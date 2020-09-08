@@ -26,7 +26,13 @@ sh.bj.sample <- chc.history %>%
   ungroup()
 
 sh.19q1 <- chc.history %>% 
-  mutate(Pack_ID = stri_pad_left(Pack_ID, 7, 0)) %>% 
+  mutate(Pack_ID = stri_pad_left(Pack_ID, 7, 0), 
+         Pack_ID = if_else(stri_sub(Pack_ID, 1, 5) == '47775', 
+                           stri_paste('58906', stri_sub(Pack_ID, 6, 7)), 
+                           Pack_ID), 
+         Pack_ID = if_else(stri_sub(Pack_ID, 1, 5) == '06470', 
+                           stri_paste('64895', stri_sub(Pack_ID, 6, 7)), 
+                           Pack_ID)) %>% 
   filter(Channel == "CHC", 
          Province == "上海", 
          Date == "2019Q1", 
@@ -38,7 +44,8 @@ sh.19q1 <- chc.history %>%
             city = first(na.omit(City)),
             units = sum(Units, na.rm = TRUE),
             sales = sum(Sales, na.rm = TRUE)) %>% 
-  ungroup()
+  ungroup() %>% 
+  mutate(price = sales / units)
 
 # pack ID existing & missing
 sh.exist.pack <- sh.19q1$packid[which(sh.19q1$packid %in% sh.bj.sample$packid)]
@@ -138,8 +145,9 @@ sh.growth <- bind_rows(merge(growth.exist, 0),
 proj.sh1 <- sh.19q1 %>% 
   left_join(sh.growth, by = c("city", "packid")) %>% 
   mutate(sales = sales * growth_1920q1,
-         units = units * growth_1920q1,
-         price = sales / units,
+         price = if_else(packid == '4268604', 103.26608, price), 
+         price = if_else(packid == '4268602', 52.12415, price), 
+         units = sales / price,
          quarter = "2020Q1",
          year = "2020") %>% 
   filter(sales > 0) %>% 

@@ -20,7 +20,7 @@ chs.pack <- read_xlsx("02_Inputs/ims.mapping1904.xlsx") %>%
 #          `规格` = tolower(`规格`))
 
 # product name
-product.name <- fread("02_Inputs/pfc与ims数据对应_20200619.csv") %>% 
+product.name <- fread("02_Inputs/pfc与ims数据对应_20200824.csv") %>% 
   distinct(packid = stri_pad_left(Pack_Id, 7, 0), product = `商品名`)
 
 
@@ -58,7 +58,9 @@ raw.bj.chs <- raw.bj.total %>%
                           packid), 
          packid = if_else(stri_sub(packid, 1, 5) == '06470', 
                           stri_paste('64895', stri_sub(packid, 6, 7)), 
-                          packid)) %>% 
+                          packid), 
+         corp_desc = if_else(product == "GLUCOPHAGE", "MERCK GROUP", corp_desc),
+         corp_desc = if_else(product == 'ONGLYZA', 'ASTRAZENECA GROUP', corp_desc)) %>% 
   filter(!(market == "IHD" & product == "CORLENTOR")) %>% 
   filter(!(market == "OAD" & product == "TANG LIN"))
 

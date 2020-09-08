@@ -35,14 +35,31 @@ proj.atc.adj <- atc.adj.raw %>%
 
 
 ##---- Scale adjustment ----
-scale.factor <- read_xlsx("02_Inputs/施维雅规模调整系数.xlsx", sheet = 2)
+# scale.factor <- read_xlsx("02_Inputs/施维雅规模调整系数.xlsx", sheet = 2)
+
+scale.factor <- data.frame(city = unique(proj.atc.adj$city)) %>% 
+  merge(data.frame(market = c('HTN', 'IHD', 'OAD'))) %>% 
+  mutate(factor = 1, 
+         factor = case_when(
+           city == '苏州' ~ 0.5, 
+           city == '宁波' ~ 0.6, 
+           city == '温州' ~ 2, 
+           city == '厦门' ~ 1.8, 
+           city == '福州' ~ 10, 
+           city == '青岛' ~ 3, 
+           city == '济南' ~ 2, 
+           city == '泉州' ~ 1.5, 
+           city == '绍兴' & market == 'OAD' ~ 0.3, 
+           city == '徐州' & market == 'OAD' ~ 0.3, 
+           TRUE ~ factor
+         ))
+
+write.xlsx(scale.factor, '05_Internal_Review/Servier_CHC_Factor.xlsx')
 
 scale.adj <- proj.atc.adj %>% 
   filter(panel != 1) %>% 
-  left_join(scale.factor, by = c("city", "market" = "mkt")) %>% 
-  mutate(factor = if_else(is.na(factor), 1, factor),
-         factor = if_else(city == "上海", 1, factor),
-         sales = sales * factor,
+  left_join(scale.factor, by = c("city", "market")) %>% 
+  mutate(sales = sales * factor, 
          units = units * factor) %>% 
   select(-factor)
 
@@ -50,7 +67,17 @@ proj.adj <- proj.atc.adj %>%
   filter(panel == 1) %>% 
   bind_rows(scale.adj)
 
-write.xlsx(proj.adj, "03_Outputs/05_Servier_CHC_Adjustment.xlsx")
+# write.xlsx(proj.adj, "03_Outputs/05_Servier_CHC_Adjustment.xlsx")
 
+# QC
+chk <- proj.adj %>% 
+  group_by(city, market, quarter) %>% 
+  summarise(sales = sum(sales)) %>% 
+  ungroup() %>% 
+  arrange(city, market, quarter)
 
-
+proj.atc.adj %>% 
+  group_by(city, panel) %>% 
+  summarise(sales = sum(sales)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = panel, values_from = sales)

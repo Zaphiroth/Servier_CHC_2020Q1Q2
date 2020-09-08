@@ -33,14 +33,14 @@ pchc.mapping4 <- pchc.mapping3 %>%
   ungroup()
 
 # IMS pack
-ims.pack <- fread("02_Inputs/pfc与ims数据对应_20200619.csv") %>% 
+ims.pack <- fread("02_Inputs/pfc与ims数据对应_20200824.csv") %>% 
   mutate(packid = stri_pad_left(Pack_Id, 7, 0),
          atc3 = stri_sub(ATC4_Code, 1, 4),
          atc2 = stri_sub(ATC4_Code, 1, 3)) %>% 
   distinct(packid, atc3, atc2, molecule_desc = Molecule_Desc)
 
 # market definition
-market.def <- read_xlsx("02_Inputs/Market_Definition.xlsx") %>% 
+market.def <- read_xlsx("02_Inputs/Market_Definition_20200824.xlsx") %>% 
   distinct(molecule = Molecule_Desc, market = TA) %>% 
   right_join(ims.pack, by = c('molecule' = "molecule_desc")) %>% 
   filter(!is.na(market))
@@ -178,8 +178,7 @@ raw.total <- bind_rows(raw.js, raw.zj) %>%
   left_join(market.def, by = "packid") %>% 
   bind_rows(raw.gz1, raw.gz2, raw.history) %>% 
   filter(!is.na(pchc), !is.na(market), pchc != '#N/A', units > 0, sales > 0) %>% 
-  filter(quarter %in% c('2019Q1', '2019Q2', '2020Q1', '2020Q2'), 
-         city %in% target.city) %>% 
+  filter(quarter %in% c('2019Q1', '2019Q2', '2020Q1', '2020Q2')) %>% 
   mutate(packid = if_else(stri_sub(packid, 1, 5) == '47775', 
                           stri_paste('58906', stri_sub(packid, 6, 7)), 
                           packid), 
@@ -200,5 +199,11 @@ raw.total <- bind_rows(raw.js, raw.zj) %>%
 
 write_feather(raw.total, '03_Outputs/01_Servier_CHC_Raw.feather')
 
-
+# QC
+chk <- raw.total %>% 
+  group_by(city, market, quarter, packid) %>% 
+  summarise(sales = sum(sales), 
+            units = sum(units)) %>% 
+  ungroup() %>% 
+  arrange(city, market, quarter, packid)
 
