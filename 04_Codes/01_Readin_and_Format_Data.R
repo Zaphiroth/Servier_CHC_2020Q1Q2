@@ -191,7 +191,7 @@ raw.total <- bind_rows(raw.js, raw.zj) %>%
          district = first(na.omit(district))) %>% 
   ungroup() %>% 
   group_by(year, date, quarter, province, city, district, pchc, market, atc3, 
-           molecule, packid) %>% 
+           molecule, product, packid) %>% 
   summarise(units = sum(units, na.rm = TRUE), 
             sales = sum(sales, na.rm = TRUE)) %>% 
   ungroup() %>% 
